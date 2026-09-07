@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>アルトリコーダー練習ゲーム</title>
+<style>
+:root{
+  --ink:#0c2c57;
+  --sky:#dff1ff;
+  --panel:#274a6c;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:#d7ebf8;color:var(--ink)}
+button{font:inherit}
+#app{
+  width:100vw;height:100vh;min-height:620px;position:relative;overflow:hidden;
+  background:
+    linear-gradient(rgba(225,245,255,.82),rgba(225,245,255,.82)) top/100% 112px no-repeat,
+    radial-gradient(circle at 20% 82%,rgba(164,217,173,.85) 0 18%,transparent 19%),
+    radial-gradient(circle at 90% 72%,rgba(92,159,120,.4) 0 22%,transparent 23%),
+    linear-gradient(#98cdf0 34%,#9bc7c3 62%,#d4d89d 82%,#c6a77d 100%);
+}
+header{
+  height:112px;display:grid;grid-template-columns:1.2fr 1.4fr .95fr;
+  align-items:center;padding:12px 28px 10px 36px;gap:24px;
+}
+.title h1{margin:0;font-size:28px;letter-spacing:.02em}
+.title p{margin:5px 0 0;color:#58799a;font-size:13px}
+.songbox{
+  height:78px;background:linear-gradient(180deg,#345e83,#244562);color:white;border-radius:10px;
+  display:grid;grid-template-columns:1fr auto;align-items:center;padding:12px 24px;box-shadow:0 3px 9px rgba(0,0,0,.08)
+}
+.songmain{font-size:24px;font-weight:800}
+.songsub{margin-top:5px}
+.badge{display:inline-block;background:#e9f5ff;color:#254767;padding:6px 24px;border-radius:999px;font-weight:700;font-size:14px}
+.page{font-size:22px;font-weight:800}
+.stats{display:grid;grid-template-columns:1fr 1fr 66px;gap:10px;align-items:center}
+.stat{border-left:1px solid rgba(33,76,118,.15);padding-left:18px}
+.stat label{display:block;font-size:13px;font-weight:800}
+.stat b{display:block;font-size:32px;line-height:1.05}
+#settings{
+  width:56px;height:56px;border:0;border-radius:12px;background:#7ea4c9;color:#fff;font-size:30px;cursor:pointer
+}
+
+#staffWrap{
+  position:absolute;top:112px;left:0;right:0;height:168px;background:rgba(255,255,255,.92);
+  overflow:hidden;border-top:1px solid rgba(0,0,0,.03);border-bottom:1px solid rgba(0,0,0,.05)
+}
+#staff{
+  position:absolute;left:24px;right:24px;top:28px;height:108px;
+}
+.staffline{position:absolute;left:0;right:0;height:2px;background:#1f2630}
+.staffline:nth-child(1){top:10px}.staffline:nth-child(2){top:28px}.staffline:nth-child(3){top:46px}.staffline:nth-child(4){top:64px}.staffline:nth-child(5){top:82px}
+.clef{position:absolute;left:8px;top:-18px;font-size:88px;color:#111;line-height:1}
+.timesig{position:absolute;left:86px;top:9px;font-size:38px;line-height:.72;font-weight:800;color:#111}
+#playhead{position:absolute;left:18%;top:0;bottom:0;width:4px;background:#ff576d;box-shadow:0 0 7px #ff8f9e;z-index:12}
+#staffTrack{position:absolute;left:0;top:0;width:5000px;height:108px;will-change:transform}
+.staffnote.active{background:#ff576d;box-shadow:0 0 10px #ff576d}
+.staffnote.active::after{background:#ff576d}
+.staffnote.open.active{background:#fff;border-color:#ff576d}
+.staffnote{position:absolute;width:22px;height:16px;border-radius:50%;background:#111;transform:rotate(-16deg)}
+.staffnote::after{content:"";position:absolute;width:2px;height:34px;background:#111;left:18px;bottom:7px}
+.staffnote.open{background:white;border:3px solid #111;width:24px;height:18px}
+.bar{position:absolute;width:2px;height:75px;background:#111;top:9px}
+
+#game{
+  position:absolute;top:280px;bottom:20px;left:50%;transform:translateX(-50%);
+  width:min(73vw,1120px);display:grid;grid-template-columns:repeat(5,1fr);
+  background:rgba(16,52,77,.72);border-radius:4px;overflow:hidden;box-shadow:0 8px 28px rgba(17,55,79,.18)
+}
+#judgeLine{
+  position:absolute;left:0;right:0;bottom:102px;height:5px;background:#fff;z-index:18;
+  box-shadow:0 0 12px rgba(255,255,255,.95),0 0 22px rgba(255,87,109,.85);
+  pointer-events:none
+}
+#judgeLine::before{
+  content:"判定ライン";position:absolute;right:10px;bottom:8px;color:#fff;font-size:12px;font-weight:900;
+  text-shadow:0 2px 5px rgba(0,0,0,.6)
+}
+.lane{position:relative;border-right:1px solid rgba(255,255,255,.6);overflow:hidden}
+.lane:last-child{border-right:0}
+.guide{position:absolute;top:0;bottom:88px;left:50%;width:2px;background:rgba(255,255,255,.5)}
+.hitZone{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:104px;width:72px;height:28px;border-radius:16px;
+  border:2px solid rgba(255,255,255,.75);box-shadow:0 0 14px currentColor inset,0 0 16px currentColor;
+  opacity:.95
+}
+.note{
+  position:absolute;left:50%;transform:translateX(-50%);width:72px;height:28px;border-radius:16px;
+  border:2px solid rgba(255,255,255,.8);box-shadow:0 0 14px currentColor;z-index:7;
+}
+.lane[data-i="0"]{color:#ff6d8d}.lane[data-i="1"]{color:#66b2ff}.lane[data-i="2"]{color:#ffd95c}.lane[data-i="3"]{color:#77df8b}.lane[data-i="4"]{color:#bc77f4}
+.lane[data-i="0"] .note,.lane[data-i="0"] .hitZone{background:#ff6d8d}
+.lane[data-i="1"] .note,.lane[data-i="1"] .hitZone{background:#66b2ff}
+.lane[data-i="2"] .note,.lane[data-i="2"] .hitZone{background:#ffd95c}
+.lane[data-i="3"] .note,.lane[data-i="3"] .hitZone{background:#77df8b}
+.lane[data-i="4"] .note,.lane[data-i="4"] .hitZone{background:#bc77f4}
+
+.recorder{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:92px;width:75px;height:356px;
+  filter:drop-shadow(0 4px 3px rgba(0,0,0,.22));pointer-events:none
+}
+.mouth{position:absolute;top:0;left:16px;width:43px;height:68px;background:linear-gradient(90deg,#e7bc77,#ffd99d,#dfad63);border-radius:14px 14px 9px 9px;border:1px solid #b98542}
+.window{position:absolute;top:27px;left:29px;width:17px;height:24px;background:#8b5b2a;border-radius:3px}
+.ring1{position:absolute;top:64px;left:13px;width:49px;height:11px;border-radius:6px;background:linear-gradient(#fff0c2,#d8a85b);border:1px solid #a97032}
+.bodytube{position:absolute;top:71px;left:20px;width:35px;height:244px;background:linear-gradient(90deg,#d9a65d,#ffdca1 47%,#dca55d);border:1px solid #b77935;border-radius:8px}
+.foot{position:absolute;bottom:0;left:14px;width:47px;height:38px;background:linear-gradient(90deg,#d7a359,#ffe1aa,#d49b50);border:1px solid #a97032;border-radius:8px 8px 14px 14px}
+.foot::before{content:"";position:absolute;left:7px;right:7px;top:7px;height:7px;border-radius:4px;background:#efc77e;border:1px solid #b1793c}
+.hole{position:absolute;left:50%;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;border:1px solid #4d3e32;background:white}
+.hole.filled{background:#050505}
+.h1{top:140px}.h2{top:177px}.h3{top:214px}.h4{top:251px}.h5{top:286px}
+.thumbMark{position:absolute;top:136px;left:6px;width:18px;height:18px;border-radius:50%;border:2px solid white;background:#080808}
+
+.label{
+  position:absolute;left:16px;right:16px;bottom:20px;height:58px;border-radius:16px;background:white;
+  border:2px solid rgba(255,255,255,.8);display:flex;align-items:center;justify-content:center;
+  font-size:32px;font-weight:900;color:#113258;box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)
+}
+.lane[data-i="0"] .label{background:#ff9ab0}.lane[data-i="1"] .label{background:#90c7ff}.lane[data-i="2"] .label{background:#ffe17b}
+.lane[data-i="3"] .label{background:#a5efaa}.lane[data-i="4"] .label{background:#d49af7}
+
+#help{
+  position:absolute;right:2.5vw;top:58%;width:170px;background:rgba(255,255,255,.9);border-radius:16px;
+  padding:18px 14px;font-weight:800;line-height:1.55;text-align:center;box-shadow:0 5px 18px rgba(0,0,0,.08)
+}
+#startOverlay{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(9,29,52,.48);z-index:50
+}
+#startCard{
+  width:min(90vw,430px);background:white;border-radius:22px;padding:28px;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.25)
+}
+#startCard h2{margin:0 0 10px;font-size:30px}
+#startBtn{
+  margin-top:10px;border:0;border-radius:14px;background:#2f77b5;color:white;font-weight:900;font-size:22px;padding:16px 34px;cursor:pointer
+}
+#judge{
+  position:absolute;left:0;right:0;top:48%;text-align:center;font-size:44px;font-weight:1000;color:#fff;
+  text-shadow:0 3px 12px rgba(0,0,0,.55);pointer-events:none;z-index:30;opacity:0
+}
+#judge.flash{animation:flash .45s ease-out}
+@keyframes flash{0%{opacity:1;transform:scale(.8)}100%{opacity:0;transform:scale(1.15)}}
+@media(max-width:900px){
+  header{padding:10px 12px;gap:8px;grid-template-columns:1fr 1.15fr .85fr}
+  .title h1{font-size:20px}.title p{display:none}.songmain{font-size:17px}.badge{font-size:11px;padding:5px 15px}
+  .stats{grid-template-columns:1fr 1fr 48px}.stat b{font-size:24px}.stat label{font-size:10px}#settings{width:44px;height:44px;font-size:22px}
+  #game{width:90vw}.recorder{transform:translateX(-50%) scale(.86);transform-origin:bottom center}
+  .label{font-size:24px}.hitZone,.note{width:56px}
+  #help{display:none}
+}
+
+#countdownOverlay{
+  position:fixed;inset:0;z-index:200;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(9,32,50,.50);
+  backdrop-filter:blur(2px);
+  pointer-events:none;
+}
+#countdownText{
+  font-size:clamp(88px,18vw,190px);
+  font-weight:1000;color:#fff;line-height:1;
+  text-shadow:0 7px 24px rgba(0,0,0,.42),0 0 28px rgba(255,255,255,.35);
+  transform:scale(1);
+  opacity:1;
+}
+#countdownText.pop{
+  animation:countPop .72s ease-out;
+}
+@keyframes countPop{
+  0%{transform:scale(.55);opacity:.15}
+  28%{transform:scale(1.16);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+
+
+/* ===== LEGEND MODE ===== */
+body.legend-mode{
+  background:#050607 !important;
+}
+body.legend-mode header,
+body.legend-mode #top,
+body.legend-mode .top,
+body.legend-mode #staffWrap,
+body.legend-mode #game{
+  background-color:#080a0d !important;
+  background-image:linear-gradient(180deg,#11151a 0%,#080a0d 55%,#020304 100%) !important;
+  color:#e8edf2 !important;
+}
+body.legend-mode #staff{
+  background:#0b0e12 !important;
+  border-color:#343a42 !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+}
+body.legend-mode #staff::before,
+body.legend-mode #staff::after{
+  opacity:.7;
+}
+body.legend-mode .lane{
+  background:linear-gradient(180deg,rgba(24,28,34,.96),rgba(5,7,9,.98)) !important;
+  border-color:#252b32 !important;
+}
+body.legend-mode .laneLabel,
+body.legend-mode .lane-name,
+body.legend-mode .label{
+  color:#d7dde5 !important;
+}
+body.legend-mode #judgeLine{
+  background:#d9dde2 !important;
+  box-shadow:0 0 10px rgba(255,255,255,.45),0 0 22px rgba(255,255,255,.16) !important;
+}
+body.legend-mode #playhead{
+  background:#c51f2b !important;
+  box-shadow:0 0 10px rgba(197,31,43,.65) !important;
+}
+body.legend-mode .badge{
+  background:#171b20 !important;
+  color:#f0f2f5 !important;
+  border:1px solid #3a414a !important;
+}
+body.legend-mode #gameControls button{
+  background:rgba(18,21,25,.94) !important;
+  color:#e9edf1 !important;
+  border:1px solid #3b424b !important;
+}
+body.legend-mode #micStatus{
+  color:#b8c0ca !important;
+}
+body.legend-mode #instruction,
+body.legend-mode .instruction{
+  background:rgba(10,12,15,.92) !important;
+  color:#d8dde4 !important;
+  border-color:#343a42 !important;
+}
+
+
+/* ===== LEGEND PREMIUM THEME v10 ===== */
+body.legend-mode{
+  background:#050608 !important;
+  color:#eef1f4 !important;
+}
+body.legend-mode header,
+body.legend-mode #top,
+body.legend-mode .top{
+  background:linear-gradient(180deg,#111418 0%,#090b0e 100%) !important;
+  color:#f2f4f6 !important;
+  border-color:#3b4148 !important;
+}
+body.legend-mode #game{
+  background:
+    radial-gradient(circle at 52% 42%,rgba(255,255,255,.025),transparent 30%),
+    linear-gradient(160deg,#0b0e12 0%,#030405 75%) !important;
+  color:#edf0f3 !important;
+}
+body.legend-mode #staffWrap{
+  background:linear-gradient(180deg,#080a0d 0%,#0d1014 100%) !important;
+  border-color:#394049 !important;
+}
+body.legend-mode #staff{
+  background:#080a0d !important;
+  border-color:#343b44 !important;
+  color:#f3f4f5 !important;
+}
+/* 五線・音楽記号・音符は白〜銀。黒にはしない */
+body.legend-mode #staff .staffline,
+body.legend-mode #staff .line{
+  background:#9ea5ad !important;
+  opacity:.75 !important;
+}
+body.legend-mode #staffTrack .staffnote{
+  background:#f4f5f6 !important;
+  border-color:#f4f5f6 !important;
+  box-shadow:0 0 7px rgba(255,255,255,.2) !important;
+}
+body.legend-mode #staffTrack .staffnote::before,
+body.legend-mode #staffTrack .staffnote::after{
+  background:#f4f5f6 !important;
+  border-color:#f4f5f6 !important;
+}
+body.legend-mode #staffTrack .staffnote.active{
+  background:#ffffff !important;
+  border-color:#ffffff !important;
+  box-shadow:0 0 12px rgba(255,255,255,.5) !important;
+}
+body.legend-mode .clef,
+body.legend-mode .treble,
+body.legend-mode .music-symbol,
+body.legend-mode .time-signature{
+  color:#f2f3f4 !important;
+  filter:none !important;
+}
+body.legend-mode #playhead{
+  background:#ef3c45 !important;
+  box-shadow:0 0 7px rgba(239,60,69,.9),0 0 18px rgba(239,60,69,.42) !important;
+}
+
+/* レーン全体：パステルを捨てて黒・ガンメタ・銀 */
+body.legend-mode .lane{
+  background:
+    linear-gradient(180deg,rgba(20,23,28,.90),rgba(6,8,10,.98)) !important;
+  border-left:1px solid #343a42 !important;
+  border-right:1px solid #1f242a !important;
+}
+body.legend-mode .lane:nth-child(odd){
+  background:linear-gradient(180deg,rgba(15,18,22,.94),rgba(4,5,7,.99)) !important;
+}
+body.legend-mode .laneLabel,
+body.legend-mode .lane-name,
+body.legend-mode .label{
+  background:transparent !important;
+  color:#eef0f2 !important;
+  border-color:#555c64 !important;
+  text-shadow:0 1px 5px rgba(0,0,0,.8) !important;
+}
+body.legend-mode .hitZone,
+body.legend-mode .hit-zone{
+  background:radial-gradient(circle,rgba(255,255,255,.08),rgba(255,255,255,.015) 65%) !important;
+  border:1px solid #aab0b7 !important;
+  box-shadow:0 0 10px rgba(255,255,255,.08),inset 0 0 12px rgba(255,255,255,.03) !important;
+}
+body.legend-mode #judgeLine{
+  background:#f0f1f2 !important;
+  box-shadow:0 0 6px rgba(255,255,255,.8),0 0 16px rgba(255,255,255,.24) !important;
+}
+body.legend-mode #gameControls button{
+  background:#11151a !important;
+  color:#eff1f3 !important;
+  border:1px solid #59616a !important;
+  box-shadow:none !important;
+}
+body.legend-mode .badge{
+  background:#101318 !important;
+  color:#d9b878 !important;
+  border:1px solid #8d7348 !important;
+}
+body.legend-mode #micStatus{
+  color:#bfc6ce !important;
+}
+body.legend-mode .stat{
+  background:#101318 !important;
+  color:#eef1f4 !important;
+  border-color:#343a42 !important;
+}
+body.legend-mode .stat label{
+  color:#9fa8b2 !important;
+}
+body.legend-mode #instruction,
+body.legend-mode .instruction{
+  background:linear-gradient(180deg,rgba(18,21,26,.95),rgba(7,9,12,.97)) !important;
+  color:#dce1e6 !important;
+  border:1px solid #3c434b !important;
+}
+body.legend-mode .note-name,
+body.legend-mode .noteLabel,
+body.legend-mode .solfege{
+  color:#f1f2f3 !important;
+  background:transparent !important;
+}
+body.legend-mode .note{
+  background:#e9ecef !important;
+  border-color:#ffffff !important;
+  box-shadow:0 0 10px rgba(255,255,255,.30) !important;
+}
+/* ゲーム中央の控えめなLEGENDロゴ */
+body.legend-mode #game::after{
+  content:"♛  L E G E N D";
+  position:absolute;
+  left:50%;top:43%;
+  transform:translate(-50%,-50%);
+  z-index:1;
+  color:#c8aa72;
+  font-family:Georgia,serif;
+  font-size:clamp(20px,3vw,42px);
+  letter-spacing:.32em;
+  opacity:.42;
+  pointer-events:none;
+  white-space:nowrap;
+}
+body.legend-mode #game::before{
+  content:"音 で、応 え ろ。";
+  position:absolute;
+  left:50%;top:49%;
+  transform:translateX(-50%);
+  z-index:1;
+  color:#b89a68;
+  font-family:serif;
+  font-size:12px;
+  letter-spacing:.35em;
+  opacity:.48;
+  pointer-events:none;
+  white-space:nowrap;
+}
+
+
+/* ===== LEGEND REFERENCE THEME v11 ===== */
+#legendLeftPanel,#legendRightPanel,#legendBrand{display:none}
+
+body.legend-mode #app{
+  background:
+    radial-gradient(ellipse at 52% 83%,rgba(185,144,76,.08),transparent 35%),
+    linear-gradient(180deg,#0b0d10 0%,#060709 50%,#030405 100%) !important;
+  color:#f2f3f4 !important;
+}
+body.legend-mode header{
+  height:82px !important;
+  padding:10px 20px !important;
+  grid-template-columns:1.25fr 1.15fr .9fr !important;
+  background:linear-gradient(180deg,#121519,#080a0c) !important;
+  border-bottom:1px solid #454a50 !important;
+}
+body.legend-mode .title h1{
+  color:#f5f5f5 !important;font-size:30px !important;letter-spacing:.04em
+}
+body.legend-mode .title p{display:none !important}
+body.legend-mode .songbox{
+  height:58px !important;
+  background:#0d1013 !important;
+  border:1px solid #4b5158 !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.02) !important;
+  border-radius:8px !important;
+  color:#d2d6da !important;
+}
+body.legend-mode .songmain{
+  font-size:15px !important;color:#9da4ad !important;font-weight:600 !important
+}
+body.legend-mode .badge{
+  background:#111317 !important;
+  color:#d7b46d !important;
+  border:1px solid #a3854d !important;
+  border-radius:6px !important;
+  padding:5px 22px !important;
+  font-size:17px !important;
+}
+body.legend-mode .stats{color:#e8ebef !important}
+body.legend-mode #settings{background:#111419 !important;border:1px solid #4d545c !important;color:#e9ecef !important}
+
+body.legend-mode #staffWrap{
+  top:82px !important;height:232px !important;
+  background:#07090b !important;
+  border-bottom:1px solid #4c5157 !important;
+}
+body.legend-mode #staff{
+  left:30px !important;right:30px !important;top:58px !important;height:116px !important;
+  background:transparent !important;
+}
+body.legend-mode .staffline{
+  height:1px !important;background:#c8cdd2 !important;opacity:.82 !important
+}
+body.legend-mode .clef,
+body.legend-mode .timesig{color:#f0f1f2 !important}
+body.legend-mode #staffTrack .staffnote{
+  background:#f4f5f6 !important;border-color:#f4f5f6 !important;
+  box-shadow:none !important
+}
+body.legend-mode #staffTrack .staffnote::after{
+  background:#f4f5f6 !important
+}
+body.legend-mode #staffTrack .staffnote.active{
+  background:#ffffff !important;border-color:#ffffff !important;
+  box-shadow:0 0 9px rgba(255,255,255,.45) !important
+}
+body.legend-mode #playhead{
+  top:18px !important;bottom:18px !important;width:2px !important;
+  background:#ff4d57 !important;
+  box-shadow:0 0 8px rgba(255,77,87,.9),0 0 18px rgba(255,77,87,.35) !important
+}
+body.legend-mode #playhead::before{
+  content:"";position:absolute;left:50%;top:-1px;transform:translate(-50%,-100%);
+  width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:12px solid #ff6d72
+}
+body.legend-mode #gameControls{top:10px !important;right:16px !important}
+body.legend-mode #gameControls button{
+  background:#111419 !important;color:#f3f4f5 !important;border:1px solid #575e66 !important;
+  padding:8px 14px !important;font-size:14px !important
+}
+
+body.legend-mode #game{
+  top:314px !important;bottom:0 !important;
+  width:min(68vw,1040px) !important;
+  background:
+    linear-gradient(180deg,rgba(11,13,16,.96),rgba(3,4,6,.99)) !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+  border-left:1px solid #2f343a !important;border-right:1px solid #2f343a !important;
+}
+body.legend-mode #game::after{
+  content:"";position:absolute;left:-25vw;right:-25vw;bottom:8%;height:34%;
+  background:
+    radial-gradient(ellipse at 16% 80%,transparent 0 48%,rgba(203,166,101,.62) 49% 49.4%,transparent 50%),
+    radial-gradient(ellipse at 84% 82%,transparent 0 48%,rgba(203,166,101,.62) 49% 49.4%,transparent 50%);
+  opacity:.65;pointer-events:none;z-index:0
+}
+body.legend-mode #game::before{
+  content:"";position:absolute;left:-25vw;right:-25vw;bottom:-4%;height:42%;
+  background:
+    radial-gradient(ellipse at 18% 86%,transparent 0 48%,rgba(132,139,148,.25) 49% 49.5%,transparent 50%),
+    radial-gradient(ellipse at 82% 86%,transparent 0 48%,rgba(132,139,148,.25) 49% 49.5%,transparent 50%);
+  opacity:.7;pointer-events:none;z-index:0
+}
+body.legend-mode .lane{
+  background:linear-gradient(180deg,rgba(8,10,12,.42),rgba(2,3,4,.7)) !important;
+  border-right:1px solid #31363c !important;color:#d8dde2 !important;z-index:2
+}
+body.legend-mode .guide{
+  background:rgba(159,166,174,.25) !important;width:1px !important
+}
+body.legend-mode .label{
+  left:50% !important;right:auto !important;transform:translateX(-50%) !important;
+  width:82px !important;height:82px !important;bottom:18px !important;border-radius:50% !important;
+  background:radial-gradient(circle at 50% 40%,#161a1f 0%,#090b0e 67%,#030405 100%) !important;
+  color:#f6f7f8 !important;border:1px solid #9ba1a8 !important;
+  box-shadow:inset 0 0 18px rgba(255,255,255,.04),0 0 8px rgba(255,255,255,.05) !important;
+  font-size:0 !important
+}
+body.legend-mode .lane .label::after{
+  content:attr(data-legend-label);font-size:24px;font-weight:700;color:#f1f2f3
+}
+body.legend-mode .hitZone{
+  width:82px !important;height:82px !important;bottom:18px !important;border-radius:50% !important;
+  background:radial-gradient(circle,#171b20,#06080a 70%) !important;
+  border:1px solid #7d848c !important;box-shadow:0 0 8px rgba(255,255,255,.05) !important
+}
+body.legend-mode #judgeLine{
+  bottom:112px !important;height:3px !important;background:#f8f8f8 !important;
+  box-shadow:0 0 7px rgba(255,255,255,.7),0 0 13px rgba(255,255,255,.18) !important
+}
+body.legend-mode #judgeLine::before{display:none !important}
+body.legend-mode #help{display:none !important}
+
+body.legend-mode #legendBrand{
+  display:block;position:absolute;left:50%;top:27%;transform:translate(-50%,-50%);
+  text-align:center;z-index:3;pointer-events:none;color:#c9a96d
+}
+body.legend-mode .legendCrown{font-size:34px;margin-bottom:8px}
+body.legend-mode .legendWord{font-family:Georgia,serif;font-size:38px;letter-spacing:.34em;white-space:nowrap}
+body.legend-mode .legendRule{height:1px;background:linear-gradient(90deg,transparent,#9f8454,transparent);margin:12px 0 14px}
+body.legend-mode .legendTagline{font-family:serif;font-size:12px;letter-spacing:.42em;color:#aa8f61}
+
+body.legend-mode #legendLeftPanel{
+  display:block;position:absolute;left:0;top:314px;bottom:0;width:16vw;min-width:150px;
+  background:linear-gradient(180deg,#171b22 0%,#090b0f 50%,#050607 100%);
+  border-right:1px solid #2f343a;z-index:4;color:#c8ced6;padding:38px 26px
+}
+body.legend-mode .legendPanelTitle{font-size:16px;color:#aeb6c0;margin-bottom:24px}
+body.legend-mode .legendMicCircle{
+  width:76px;height:76px;border-radius:50%;border:2px solid #66717f;
+  display:flex;align-items:center;justify-content:center;font-size:34px;color:#8291a3;margin-bottom:12px
+}
+body.legend-mode #legendDetected{font-size:18px;line-height:1.5;color:#edf0f3}
+body.legend-mode .legendBars{height:82px;display:flex;align-items:end;gap:5px;margin-top:22px}
+body.legend-mode .legendBars i{display:block;width:9px;background:#667382;border-radius:1px}
+body.legend-mode .legendBars i:nth-child(1){height:22px;background:#d9efff}
+body.legend-mode .legendBars i:nth-child(2){height:32px;background:#b7d7ef}
+body.legend-mode .legendBars i:nth-child(3){height:40px}.legendBars i:nth-child(4){height:49px}.legendBars i:nth-child(5){height:59px}.legendBars i:nth-child(6){height:67px}
+body.legend-mode .legendBpm{position:absolute;bottom:26px;left:26px;color:#87919d;font-size:14px}
+body.legend-mode .legendBpm b{font-size:32px;color:#d7dde4;font-weight:400}
+
+body.legend-mode #legendRightPanel{
+  display:block;position:absolute;right:0;top:314px;bottom:0;width:16vw;min-width:150px;
+  background:linear-gradient(180deg,#151920 0%,#090b0e 52%,#050607 100%);
+  border-left:1px solid #2f343a;z-index:4;padding:38px 30px;color:#d6dbe1
+}
+body.legend-mode .legendScoreTitle{font-size:14px;color:#969faa;margin-top:6px}
+body.legend-mode #legendScore{font-size:35px;letter-spacing:.08em;margin:4px 0 24px}
+body.legend-mode #legendCombo{font-size:38px;margin-top:5px}
+
+body.legend-mode #countdownOverlay{
+  background:rgba(0,0,0,.72) !important
+}
+body.legend-mode #countdownText{
+  color:#d7b46d !important;text-shadow:0 0 26px rgba(183,145,75,.35) !important
+}
+
+@media(max-width:900px){
+  body.legend-mode #legendLeftPanel,body.legend-mode #legendRightPanel{display:none !important}
+  body.legend-mode #game{width:94vw !important}
+  body.legend-mode .title h1{font-size:21px !important}
+  body.legend-mode .songbox{height:52px !important}
+  body.legend-mode #staffWrap{height:210px !important}
+  body.legend-mode #game{top:292px !important}
+}
+
+
+/* ===== v12: LEGEND 難易度表示の見切れ修正 ===== */
+body.legend-mode .songbox{
+  min-height:62px !important;
+  height:62px !important;
+  padding:7px 14px !important;
+  overflow:visible !important;
+  align-items:center !important;
+}
+body.legend-mode .songbox > div:first-child{
+  min-width:0 !important;
+  overflow:visible !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+  flex-wrap:nowrap !important;
+}
+body.legend-mode .songmain{
+  margin:0 !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  flex:0 0 auto !important;
+}
+body.legend-mode .songsub{
+  margin:0 !important;
+  overflow:visible !important;
+  flex:0 0 auto !important;
+}
+body.legend-mode .badge{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-width:118px !important;
+  max-width:none !important;
+  height:38px !important;
+  padding:0 18px !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  box-sizing:border-box !important;
+}
+
+
+/* ===== v13 UI polish ===== */
+#settings{
+  display:none !important;
+}
+
+/* LEGEND左パネル下部：
+   BPMを独立したカード風表示にして、電波/レベルバーと重ならないよう整理 */
+body.legend-mode .legendBars{
+  position:relative !important;
+  height:72px !important;
+  margin-top:22px !important;
+  margin-bottom:92px !important;
+  padding-left:4px !important;
+  align-items:flex-end !important;
+}
+body.legend-mode .legendBpm{
+  position:absolute !important;
+  left:22px !important;
+  right:22px !important;
+  bottom:22px !important;
+  padding:12px 14px !important;
+  border-top:1px solid rgba(201,169,109,.38) !important;
+  background:linear-gradient(90deg,rgba(201,169,109,.045),rgba(255,255,255,.018),transparent) !important;
+  color:#8f98a3 !important;
+  font-size:12px !important;
+  letter-spacing:.14em !important;
+  line-height:1.15 !important;
+}
+body.legend-mode .legendBpm b{
+  display:block !important;
+  margin-top:4px !important;
+  font-family:Georgia,serif !important;
+  font-size:29px !important;
+  line-height:1 !important;
+  letter-spacing:.08em !important;
+  color:#d7dde4 !important;
+  font-weight:400 !important;
+}
+
+
+/* ===== v24: v13ベース / アルト12レーン ===== */
+#game{
+  width:96vw !important;
+  grid-template-columns:repeat(12,minmax(0,1fr)) !important;
+  overflow:hidden !important;
+}
+.lane{min-width:0 !important}
+.label{
+  left:3px !important;right:3px !important;
+  font-size:16px !important;
+}
+.hitZone,.note{width:42px !important;height:23px !important}
+.recorder{
+  transform:translateX(-50%) scale(.72) !important;
+  transform-origin:center bottom !important;
+}
+/* 親指のサミングを半塗りで表示 */
+.thumbMark.half{
+  background:linear-gradient(90deg,#111 0 50%,#fff 50% 100%) !important;
+  border:1px solid #555 !important;
+}
+.thumbMark.filled,.hole.filled{background:#111 !important}
+
+/* 追加レーンのポップ配色 */
+.lane[data-i="5"]{background:#fff0dd}.lane[data-i="6"]{background:#e5fbf8}
+.lane[data-i="7"]{background:#ffe7ee}.lane[data-i="8"]{background:#e7f2ff}
+.lane[data-i="9"]{background:#fff8d7}.lane[data-i="10"]{background:#eafbe6}
+.lane[data-i="11"]{background:#f4e9ff}
+@media(max-width:900px){
+  #game{width:98vw !important}
+  .recorder{transform:translateX(-50%) scale(.58) !important}
+  .label{font-size:13px !important}
+  .hitZone,.note{width:32px !important;height:20px !important}
+}
+
+
+/* ===== v25 修正 ===== */
+
+/* 「音符が線にきたら〜」の案内箱は使わない */
+#help{display:none !important}
+
+/* ミ以降だけ付いていたレーン背景を撤去。12レーンすべて同じ背景にする */
+.lane[data-i="5"],
+.lane[data-i="6"],
+.lane[data-i="7"],
+.lane[data-i="8"],
+.lane[data-i="9"],
+.lane[data-i="10"],
+.lane[data-i="11"]{
+  background:transparent !important;
+}
+
+/* 追加7レーンも最初の5レーンと同じポップ配色ルール */
+.lane[data-i="5"]{color:#ff6d8d}
+.lane[data-i="6"]{color:#66b2ff}
+.lane[data-i="7"]{color:#ffd95c}
+.lane[data-i="8"]{color:#77df8b}
+.lane[data-i="9"]{color:#bc77f4}
+.lane[data-i="10"]{color:#ff6d8d}
+.lane[data-i="11"]{color:#66b2ff}
+
+.lane[data-i="5"] .note,.lane[data-i="5"] .hitZone{background:#ff6d8d}
+.lane[data-i="6"] .note,.lane[data-i="6"] .hitZone{background:#66b2ff}
+.lane[data-i="7"] .note,.lane[data-i="7"] .hitZone{background:#ffd95c}
+.lane[data-i="8"] .note,.lane[data-i="8"] .hitZone{background:#77df8b}
+.lane[data-i="9"] .note,.lane[data-i="9"] .hitZone{background:#bc77f4}
+.lane[data-i="10"] .note,.lane[data-i="10"] .hitZone{background:#ff6d8d}
+.lane[data-i="11"] .note,.lane[data-i="11"] .hitZone{background:#66b2ff}
+
+.lane[data-i="5"] .label{background:#ff9ab0}
+.lane[data-i="6"] .label{background:#90c7ff}
+.lane[data-i="7"] .label{background:#ffe17b}
+.lane[data-i="8"] .label{background:#a5efaa}
+.lane[data-i="9"] .label{background:#d49af7}
+.lane[data-i="10"] .label{background:#ff9ab0}
+.lane[data-i="11"] .label{background:#90c7ff}
+
+/* リコーダー：画面上側が足部、画面下側が吹き口 */
+.recorder{
+  position:absolute !important;
+  left:50% !important;
+  bottom:92px !important;
+  width:70px !important;
+  height:350px !important;
+  transform:translateX(-50%) scale(.72) !important;
+  transform-origin:center bottom !important;
+  filter:drop-shadow(0 4px 3px rgba(0,0,0,.22)) !important;
+  pointer-events:none !important;
+}
+
+/* 足部をいちばん上へ */
+.recorder .foot{
+  top:0 !important;
+  bottom:auto !important;
+  left:12px !important;
+  width:46px !important;
+  height:38px !important;
+  border-radius:14px 14px 8px 8px !important;
+}
+
+/* 管体 */
+.recorder .bodytube{
+  top:32px !important;
+  left:18px !important;
+  width:34px !important;
+  height:245px !important;
+  border-radius:8px !important;
+}
+
+/* 吹き口直前のリング */
+.recorder .ring1{
+  top:auto !important;
+  bottom:64px !important;
+  left:11px !important;
+  width:48px !important;
+  height:11px !important;
+}
+
+/* 吹き口は画面のいちばん下 */
+.recorder .mouth{
+  top:auto !important;
+  bottom:0 !important;
+  left:14px !important;
+  width:42px !important;
+  height:68px !important;
+  border-radius:9px 9px 14px 14px !important;
+}
+
+/* ウィンドウェイも吹き口の中だけに置く */
+.recorder .window{
+  top:15px !important;
+  left:12px !important;
+  width:17px !important;
+  height:23px !important;
+}
+
+/*
+  穴の物理的位置：
+  画面上 → ⑦ ⑥ ⑤ ④ ③ ② ① → 吹き口（画面下）
+  ⑦と⑥は実物どおりダブルホール。
+*/
+.recorder .hole,
+.recorder .doubleHole{
+  position:absolute !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  z-index:5 !important;
+  box-sizing:border-box !important;
+}
+.recorder .hole{
+  width:15px !important;
+  height:15px !important;
+  border-radius:50% !important;
+  border:1.5px solid #4d3e32 !important;
+  background:#fff !important;
+}
+.recorder .hole.filled{background:#050505 !important}
+
+/* ⑦・⑥：2つ並んだ穴 */
+.recorder .doubleHole{
+  width:31px !important;
+  height:12px !important;
+  display:flex !important;
+  justify-content:space-between !important;
+}
+.recorder .doubleHole i{
+  display:block !important;
+  width:12px !important;
+  height:12px !important;
+  border-radius:50% !important;
+  border:1.5px solid #4d3e32 !important;
+  background:#fff !important;
+}
+.recorder .doubleHole.filled i{background:#050505 !important}
+
+/* 穴番号と実際の縦位置 */
+.recorder .h7{top:57px !important}
+.recorder .h6{top:83px !important}
+.recorder .h5{top:112px !important}
+.recorder .h4{top:142px !important}
+.recorder .h3{top:174px !important}
+.recorder .h2{top:207px !important}
+.recorder .h1{top:240px !important}
+
+/* 親指穴は①付近の裏側なので、横にずらして表示 */
+.recorder .thumbMark{
+  position:absolute !important;
+  top:236px !important;
+  left:3px !important;
+  width:15px !important;
+  height:15px !important;
+  border-radius:50% !important;
+  border:1.5px solid #4d3e32 !important;
+  background:#fff !important;
+  z-index:6 !important;
+}
+.recorder .thumbMark.filled{background:#050505 !important}
+.recorder .thumbMark.half{
+  background:linear-gradient(90deg,#050505 0 50%,#fff 50% 100%) !important;
+}
+
+/* 古い5穴用の指定を完全に上書き */
+.recorder .h1,.recorder .h2,.recorder .h3,
+.recorder .h4,.recorder .h5,.recorder .h6,.recorder .h7{
+  margin:0 !important;
+}
+
+@media(max-width:900px){
+  .recorder{
+    transform:translateX(-50%) scale(.58) !important;
+  }
+}
+
+
+/* ===== v26 最終位置補正 ===== */
+#help{display:none!important}
+
+/* 12レーンの背景は全部同じ */
+.lane[data-i="0"],.lane[data-i="1"],.lane[data-i="2"],.lane[data-i="3"],
+.lane[data-i="4"],.lane[data-i="5"],.lane[data-i="6"],.lane[data-i="7"],
+.lane[data-i="8"],.lane[data-i="9"],.lane[data-i="10"],.lane[data-i="11"]{
+  background:transparent!important;
+}
+
+/* リコーダー本体。吹き口を画面下側へ */
+.recorder{
+  position:absolute!important;
+  left:50%!important;
+  bottom:88px!important;
+  width:70px!important;
+  height:350px!important;
+  transform:translateX(-50%) scale(.72)!important;
+  transform-origin:center bottom!important;
+}
+.recorder .foot{
+  position:absolute!important;
+  top:0!important;bottom:auto!important;
+  left:11px!important;width:48px!important;height:40px!important;
+}
+.recorder .bodytube{
+  position:absolute!important;
+  top:34px!important;left:18px!important;
+  width:34px!important;height:244px!important;
+}
+.recorder .ring1{
+  position:absolute!important;
+  top:auto!important;bottom:63px!important;
+  left:10px!important;width:50px!important;height:12px!important;
+}
+.recorder .mouth{
+  position:absolute!important;
+  top:auto!important;bottom:0!important;
+  left:14px!important;width:42px!important;height:68px!important;
+}
+.recorder .window{
+  position:absolute!important;
+  top:16px!important;left:12px!important;
+  width:18px!important;height:22px!important;
+}
+
+/* 画面上から 7,6,5,4,3,2,1 → 吹き口 */
+.recorder .hole,.recorder .doubleHole{
+  position:absolute!important;
+  z-index:8!important;
+  box-sizing:border-box!important;
+}
+.recorder .hole{
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  width:14px!important;height:14px!important;
+  border-radius:50%!important;
+  border:1.5px solid #55483b!important;
+  background:#fff!important;
+}
+.recorder .hole.filled{background:#080808!important}
+
+.recorder .doubleHole{
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  width:31px!important;height:12px!important;
+  display:flex!important;
+  justify-content:space-between!important;
+}
+.recorder .doubleHole i{
+  width:12px!important;height:12px!important;
+  display:block!important;
+  border-radius:50%!important;
+  border:1.5px solid #55483b!important;
+  background:#fff!important;
+}
+.recorder .doubleHole.filled i{background:#080808!important}
+
+/* 穴の間隔を実物っぽく。吹き口側ほど1番穴 */
+.recorder .h7{top:58px!important}
+.recorder .h6{top:82px!important}
+.recorder .h5{top:111px!important}
+.recorder .h4{top:141px!important}
+.recorder .h3{top:177px!important}
+.recorder .h2{top:207px!important}
+.recorder .h1{top:237px!important}
+
+/* 裏側の親指穴は1〜2番穴付近に横へずらして表示 */
+.recorder .thumbMark{
+  position:absolute!important;
+  top:219px!important;
+  left:4px!important;
+  width:14px!important;height:14px!important;
+  border-radius:50%!important;
+  border:1.5px solid #55483b!important;
+  background:#fff!important;
+  z-index:9!important;
+}
+.recorder .thumbMark.filled{background:#080808!important}
+.recorder .thumbMark.half{
+  background:linear-gradient(90deg,#080808 0 50%,#fff 50% 100%)!important;
+}
+
+/* 既存の古い穴用疑似要素などを無効化 */
+.recorder .hole::before,.recorder .hole::after,
+.recorder .thumbMark::before,.recorder .thumbMark::after{
+  content:none!important;
+}
+
+
+/* ===== v27 Yamaha運指 + ダブルホール形状修正 ===== */
+
+/* 吹き口は必ず画面下側 */
+.recorder .mouth{
+  top:auto !important;
+  bottom:0 !important;
+}
+
+/* ⑥・⑦のダブルホールは、ほぼ接するくらい近く */
+.recorder .doubleHole{
+  width:21px !important;
+  height:12px !important;
+  gap:2px !important;
+  justify-content:center !important;
+  align-items:center !important;
+}
+
+/* 大きい穴 */
+.recorder .doubleHole i:first-child{
+  width:12px !important;
+  height:12px !important;
+  flex:0 0 12px !important;
+}
+
+/* 片方だけ小さい穴 */
+.recorder .doubleHole i:last-child{
+  width:8px !important;
+  height:8px !important;
+  flex:0 0 8px !important;
+  margin-top:2px !important;
+}
+
+/* 開閉色 */
+.recorder .doubleHole.filled i{
+  background:#080808 !important;
+}
+.recorder .doubleHole:not(.filled) i{
+  background:#fff !important;
+}
+
+/* 親指サミングを見やすく */
+.recorder .thumbMark.half{
+  background:linear-gradient(90deg,#080808 0 55%,#fff 55% 100%) !important;
+  border:1.5px solid #55483b !important;
+}
+
+
+/* ===== v28 五線譜音高修正 ===== */
+/* 音符の加線 */
+.staffnote{overflow:visible !important}
+.staffnote .ledgerLine{
+  position:absolute;
+  left:-5px;
+  width:32px;
+  height:1.5px;
+  background:#111;
+  pointer-events:none;
+}
+.staffnote .ledgerHigh1{top:10px}
+.staffnote .ledgerHigh2{top:1px}
+
+body.legend-mode .staffnote .ledgerLine{
+  background:#e8edf2 !important;
+}
+
+
+/* ===== v29 五線譜位置をト音記号に正しく合わせる ===== */
+#staff,#staffTrack{overflow:visible !important}
+.staffnote .ledgerLine{
+  position:absolute !important;
+  left:-5px !important;
+  width:32px !important;
+  height:2px !important;
+  background:#111 !important;
+  transform:rotate(16deg) !important; /* 親の-16degを相殺 */
+  transform-origin:center !important;
+  z-index:-1 !important;
+}
+body.legend-mode .staffnote .ledgerLine{
+  background:#e8edf2 !important;
+}
+
+
+/* ===== v31 喜びの歌モード ===== */
+.staffnote.halfNote{
+  background:#fff !important;
+  border:3px solid #111 !important;
+}
+.staffnote.dottedNote::before{
+  content:"";
+  position:absolute;
+  width:5px;height:5px;border-radius:50%;
+  background:#111;
+  right:-10px;top:5px;
+}
+.staffnote.eighthNote::before{
+  content:"";
+  position:absolute;
+  left:19px;bottom:34px;
+  width:13px;height:16px;
+  border-top:3px solid #111;
+  border-radius:0 9px 0 0;
+  transform:rotate(18deg);
+}
+body.legend-mode .staffnote.halfNote{background:#080a0d !important;border-color:#e8edf2 !important}
+body.legend-mode .staffnote.dottedNote::before{background:#e8edf2 !important}
+body.legend-mode .staffnote.eighthNote::before{border-color:#e8edf2 !important}
+#songMode:disabled,#difficulty:disabled{cursor:not-allowed}
+
+
+/* ===== v33 レイアウト改善 ===== */
+
+/* 上部：タイトルの水色エリアを約半分幅に */
+header{
+  grid-template-columns:.58fr 1.55fr 1.05fr !important;
+}
+.title{
+  min-width:0;
+}
+.title h1{
+  font-size:22px !important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.title p{
+  display:none !important;
+}
+
+/* 五線譜を画面下へ */
+#staffWrap{
+  top:auto !important;
+  bottom:0 !important;
+  height:168px !important;
+}
+
+/* 音ゲー部分を中央へ */
+#game{
+  top:120px !important;
+  bottom:176px !important;
+}
+
+/* リコーダーを現在の1.5倍に */
+.recorder{
+  transform:translateX(-50%) scale(1.08) !important;
+  transform-origin:center bottom !important;
+}
+
+/* スマホ・タブレット側でも1.5倍相当 */
+@media(max-width:900px){
+  header{
+    grid-template-columns:.55fr 1.45fr 1fr !important;
+  }
+  .title h1{
+    font-size:16px !important;
+  }
+  #game{
+    top:112px !important;
+    bottom:168px !important;
+  }
+  .recorder{
+    transform:translateX(-50%) scale(1.29) !important;
+    transform-origin:center bottom !important;
+  }
+}
+
+
+/* ===== v34 上部タイトルさらにコンパクト ===== */
+header{
+  grid-template-columns:.29fr 1.70fr 1.08fr !important;
+  gap:12px !important;
+  padding-left:14px !important;
+}
+.title h1{
+  font-size:15px !important;
+  letter-spacing:-.04em !important;
+}
+@media(max-width:900px){
+  header{
+    grid-template-columns:.275fr 1.58fr 1.05fr !important;
+    gap:5px !important;
+    padding-left:6px !important;
+  }
+  .title h1{
+    font-size:11px !important;
+  }
+}
+
+
+/* ===== v35 五線譜：音符の縦棒を垂直に ===== */
+.staffnote::after{
+  transform:rotate(16deg) !important;
+  transform-origin:bottom center !important;
+}
+
+
+/* ===== v36 加線の位置を統一 ===== */
+.staffnote .ledgerLine{
+  left:50% !important;
+  width:32px !important;
+  height:2px !important;
+  margin-left:-16px !important;
+  transform:rotate(16deg) !important;
+  transform-origin:center center !important;
+}
+
+
+/* ===== v37 加線を五線譜へ直接配置：左右ズレを完全に解消 ===== */
+.trackLedgerLine{
+  position:absolute;
+  width:32px;
+  height:2px;
+  background:#111;
+  z-index:0;
+  pointer-events:none;
+  transform:none !important;
+}
+body.legend-mode .trackLedgerLine{
+  background:#e8edf2 !important;
+}
+.staffnote{
+  z-index:1;
+}
+
+
+/* ===== v38 リコーダーイラストを半分の大きさに ===== */
+.recorder{
+  transform:translateX(-50%) scale(.54) !important;
+  transform-origin:center bottom !important;
+}
+@media(max-width:900px){
+  .recorder{
+    transform:translateX(-50%) scale(.645) !important;
+    transform-origin:center bottom !important;
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="title"><h1>アルトリコーダー練習ゲーム</h1><p>− 音を見て、吹いて、楽しみながら上達しよう！−</p></div>
+  <div class="songbox"><div><div class="songmain">難易度</div><div class="songsub"><span class="badge">普通</span></div></div><div class="page"></div></div>
+  <div class="stats">
+    <div class="stat"><label>SCORE</label><b id="score">000000</b></div>
+    <div class="stat"><label>COMBO</label><b id="combo">0</b></div>
+    <button id="settings">⚙</button>
+    <div id="micStatus" style="grid-column:1/-1;font-size:12px;color:#315d86;text-align:right;margin-top:-6px"></div>
+  </div>
+</header>
+
+<div id="staffWrap">
+  <div id="gameControls" style="position:absolute;right:10px;top:8px;z-index:40;display:flex;gap:6px">
+    <button id="pauseBtn" style="border:0;border-radius:9px;padding:7px 10px;background:rgba(255,255,255,.94);color:#173b61;font-weight:900;font-size:13px">⏸ 一時停止</button>
+    <button id="titleBtn" style="border:0;border-radius:9px;padding:7px 10px;background:rgba(255,255,255,.94);color:#173b61;font-weight:900;font-size:13px">🏠 タイトル</button>
+  </div>
+  <div id="playhead"></div>
+  <div id="staff">
+    <div class="staffline"></div><div class="staffline"></div><div class="staffline"></div><div class="staffline"></div><div class="staffline"></div>
+    <div class="clef">𝄞</div>
+    <div class="timesig">4<br>4</div>
+    <div id="staffTrack"></div>
+  </div>
+</div>
+
+<div id="legendLeftPanel">
+  <div class="legendPanelTitle">マイク検出</div>
+  <div class="legendMicCircle">🎤</div>
+  <div id="legendDetected">—</div>
+  <div class="legendBars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="legendBpm">BPM<br><b>120</b></div>
+</div>
+
+<div id="legendRightPanel">
+  <div class="legendScoreTitle">SCORE</div>
+  <div id="legendScore">000000</div>
+  <div class="legendScoreTitle">COMBO</div>
+  <div id="legendCombo">0</div>
+</div>
+
+<div id="game">
+  <div id="legendBrand"><div class="legendCrown">♛</div><div class="legendWord">L E G E N D</div><div class="legendRule"></div><div class="legendTagline">音 で、応 え ろ。</div></div>
+  <div id="judgeLine"></div>
+  <div class="lane" data-i="0" data-name="ソ"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="1" data-name="ラ"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="2" data-name="シ"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="3" data-name="ド"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="4" data-name="レ"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="5" data-name="ミ"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="6" data-name="ファ"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="7" data-name="ソ"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="8" data-name="ラ"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="9" data-name="シ"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="10" data-name="ド"><div class="guide"></div><div class="hitZone"></div></div>
+  <div class="lane" data-i="11" data-name="レ"><div class="guide"></div><div class="hitZone"></div></div>
+</div>
+
+
+<div id="judge"></div>
+
+<div id="countdownOverlay"><div id="countdownText">3</div></div>
+
+<div id="startOverlay">
+  <div id="startCard">
+    <h2>🎵 練習スタート</h2>
+    <p>音符がリコーダーの上まで来たら、<br>その音のレーンをタップ！</p>
+    <div style="margin:16px 0 8px;text-align:left">
+      <label for="songMode" style="display:block;font-weight:900;margin-bottom:7px">練習内容</label>
+      <select id="songMode" style="width:100%;padding:13px;border-radius:12px;border:1px solid #aac4da;font-size:18px;background:#f7fbff;color:#153b62;margin-bottom:8px">
+        <option value="practice" selected>基礎練習</option>
+        <option value="joy">🎵 喜びの歌</option>
+      </select>
+      <div id="songHelp" style="margin:0 0 14px;font-size:13px;line-height:1.5;color:#5f7891">
+        基礎練習：これまでの12音練習
+      </div>
+      <label for="mode" style="display:block;font-weight:900;margin-bottom:7px">モード</label>
+      <select id="mode" style="width:100%;padding:13px;border-radius:12px;border:1px solid #aac4da;font-size:18px;background:#f7fbff;color:#153b62;margin-bottom:14px">
+        <option value="solo">個人モード</option>
+        <option value="classroom" selected>教室モード</option>
+      </select>
+      <div id="modeHelp" style="margin:-4px 0 14px;font-size:13px;line-height:1.5;color:#5f7891">
+        教室モード：判定の瞬間にリコーダー音が鳴る（採点なし）
+      </div>
+      <label for="difficulty" style="display:block;font-weight:900;margin-bottom:7px">難易度</label>
+      <select id="difficulty" style="width:100%;padding:13px;border-radius:12px;border:1px solid #aac4da;font-size:18px;background:#f7fbff;color:#153b62">
+        <option value="easy">やさしい</option>
+        <option value="normal" selected>普通</option>
+        <option value="hard">難しい</option>
+        <option value="pro">プロフェッショナル</option>
+        <option value="legend">レジェンド</option>
+      </select>
+      <div id="difficultyHelp" style="margin-top:8px;font-size:13px;line-height:1.5;color:#5f7891">
+        普通：今までと同じスピード
+      </div>
+    </div>
+    <button id="startBtn">▶ はじめる</button>
+  </div>
+</div>
+</div>
+
+<script>
+const lanes=[...document.querySelectorAll('.lane')];
+const names=["ソ", "ラ", "シ", "ド", "レ", "ミ", "ファ", "ソ", "ラ", "シ", "ド", "レ"];
+// アルトリコーダーの基本音域の5音（F4〜C5）を想定
+const noteFreq=[392.0, 440.0, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.0, 987.77, 1046.5, 1174.66];
+const fingerings=[["X", "X", "X", "X", "X", "X", "X", "O"], ["X", "X", "X", "X", "X", "X", "O", "O"], ["X", "X", "X", "X", "O", "X", "X", "O"], ["X", "X", "X", "X", "O", "O", "O", "O"], ["X", "X", "X", "O", "O", "O", "O", "O"], ["X", "X", "O", "O", "O", "O", "O", "O"], ["X", "O", "X", "O", "O", "O", "O", "O"], ["O", "O", "X", "O", "O", "O", "O", "O"], ["H", "X", "X", "X", "X", "X", "O", "O"], ["H", "X", "X", "X", "O", "X", "O", "O"], ["H", "X", "X", "X", "O", "O", "O", "O"], ["H", "X", "X", "O", "O", "O", "O", "O"]];
+
+function recorderHTML(f){
+  const cls=v=>v==="X"?"filled":(v==="H"?"half":"");
+  const single=(num)=>`<div class="hole h${num} ${cls(f[num])}"></div>`;
+  const dbl=(num)=>`<div class="doubleHole h${num} ${cls(f[num])}">
+      <i></i><i></i>
+    </div>`;
+  return `<div class="recorder">
+    <div class="foot"></div>
+    <div class="bodytube"></div>
+
+    ${dbl(7)}
+    ${dbl(6)}
+    ${single(5)}
+    ${single(4)}
+    ${single(3)}
+    ${single(2)}
+    ${single(1)}
+
+    <div class="thumbMark ${cls(f[0])}"></div>
+
+    <div class="ring1"></div>
+    <div class="mouth"><div class="window"></div></div>
+  </div>`;
+}
+lanes.forEach((lane,i)=>{
+  lane.insertAdjacentHTML('beforeend',recorderHTML(fingerings[i]));
+  lane.insertAdjacentHTML('beforeend',`<div class="label">${names[i]}</div>`);
+});
+
+const baseChart=[
+  {t:4.0,l:0},
+  {t:4.9,l:1},
+  {t:5.8,l:2},
+  {t:6.7,l:3},
+  {t:7.6,l:4},
+  {t:8.5,l:5},
+  {t:9.4,l:6},
+  {t:10.3,l:7},
+  {t:11.2,l:8},
+  {t:12.1,l:9},
+  {t:13.0,l:10},
+  {t:13.9,l:11},
+  {t:14.8,l:10},
+  {t:15.7,l:9},
+  {t:16.6,l:8},
+  {t:17.5,l:7},
+  {t:18.4,l:6},
+  {t:19.3,l:5},
+  {t:20.2,l:4},
+  {t:21.1,l:3},
+  {t:22.0,l:2},
+  {t:22.9,l:1},
+
+  {t:23.8,l:0}
+];
+
+/*
+  喜びの歌（アルトリコーダーA）
+  写真の旋律：
+  ミ ミ ファ ソ｜ソ ファ ミ レ｜ド ド レ ミ｜ミ(付点) レ(8分) レ(2分)｜
+  ミ ミ ファ ソ｜ソ ファ ミ レ｜ド ド レ ミ｜レ(付点) ド(8分) ド(2分)
+
+  q = 四分音符。楽譜指定 ♩=116〜126 の中央付近、BPM120で配置。
+  落下にかかる時間 travel は「普通」と同じ4.0秒。
+*/
+const JOY_Q = 0.5; // BPM120
+const joySteps = [
+  [5,1],[5,1],[6,1],[7,1],
+  [7,1],[6,1],[5,1],[4,1],
+  [3,1],[3,1],[4,1],[5,1],
+  [5,1.5],[4,.5],[4,2],
+
+  [5,1],[5,1],[6,1],[7,1],
+  [7,1],[6,1],[5,1],[4,1],
+  [3,1],[3,1],[4,1],[5,1],
+  [4,1.5],[3,.5],[3,2]
+];
+
+function buildJoyChart(quarterSec=JOY_Q){
+  let beat=0;
+  const firstTime=4.0;
+  return joySteps.map(([lane,beats],i)=>{
+    const n={t:firstTime+beat*quarterSec,l:lane,beats:beats};
+    beat+=beats;
+    return n;
+  });
+}
+
+
+let chart=baseChart.map(x=>({...x}));
+let state=[],startTime=0,running=false,paused=false,pauseTime=0,raf=0,score=0,combo=0;
+let travel=4.0;
+let currentSetting=null;
+let currentMode='classroom';
+const judgeBottom=102;
+
+// --- 音声まわり ---
+let audioCtx=null, micStream=null, analyser=null, micData=null;
+let detectedHz=0, detectedLane=null, lastStableLane=null, stableSince=0;
+let scheduledClassroom=new Set();
+
+async function ensureAudioContext(){
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') await audioCtx.resume();
+}
+
+function freqToLane(freq){
+  if(!freq || freq<250 || freq>700) return null;
+  let best=null,bestCents=999;
+  noteFreq.forEach((f,i)=>{
+    const cents=Math.abs(1200*Math.log2(freq/f));
+    if(cents<bestCents){bestCents=cents;best=i;}
+  });
+  return bestCents<=55 ? best : null;
+}
+
+// 軽量な自己相関ベースの音程検出
+function autoCorrelate(buf, sampleRate){
+  let rms=0;
+  for(let i=0;i<buf.length;i++) rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/buf.length);
+  if(rms<0.02) return -1;
+
+  let r1=0,r2=buf.length-1,thres=0.2;
+  for(let i=0;i<buf.length/2;i++){if(Math.abs(buf[i])<thres){r1=i;break;}}
+  for(let i=1;i<buf.length/2;i++){if(Math.abs(buf[buf.length-i])<thres){r2=buf.length-i;break;}}
+  buf=buf.slice(r1,r2);
+  const size=buf.length;
+  const c=new Array(size).fill(0);
+  for(let i=0;i<size;i++){
+    for(let j=0;j<size-i;j++) c[i]+=buf[j]*buf[j+i];
+  }
+  let d=0;
+  while(d+1<size && c[d]>c[d+1]) d++;
+  let maxval=-1,maxpos=-1;
+  for(let i=d;i<size;i++){if(c[i]>maxval){maxval=c[i];maxpos=i;}}
+  if(maxpos<=0) return -1;
+
+  let T0=maxpos;
+  if(T0>0 && T0<size-1){
+    const x1=c[T0-1],x2=c[T0],x3=c[T0+1];
+    const a=(x1+x3-2*x2)/2;
+    const b=(x3-x1)/2;
+    if(a) T0=T0-b/(2*a);
+  }
+  return sampleRate/T0;
+}
+
+async function startMic(){
+  try{
+    await ensureAudioContext();
+    if(!micStream){
+      micStream=await navigator.mediaDevices.getUserMedia({
+        audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}
+      });
+    }
+    const src=audioCtx.createMediaStreamSource(micStream);
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=2048;
+    micData=new Float32Array(analyser.fftSize);
+    src.connect(analyser);
+    document.getElementById('micStatus').textContent='🎤 マイクON';
+    return true;
+  }catch(e){
+    document.getElementById('micStatus').textContent='🎤 マイクを許可できませんでした';
+    alert('個人モードではマイクの許可が必要やで。Safari/Chromeのマイク許可をONにしてもう一度試してな。');
+    return false;
+  }
+}
+
+function stopMic(){
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
+  analyser=null;micData=null;detectedHz=0;detectedLane=null;lastStableLane=null;
+  document.getElementById('micStatus').textContent='';
+}
+
+function updateMic(){
+  if(!analyser || !micData) return;
+  analyser.getFloatTimeDomainData(micData);
+  const hz=autoCorrelate(micData,audioCtx.sampleRate);
+  detectedHz=hz>0?hz:0;
+  const lane=freqToLane(detectedHz);
+  if(lane===lastStableLane){
+    if(performance.now()-stableSince>60) detectedLane=lane;
+  }else{
+    lastStableLane=lane;
+    stableSince=performance.now();
+  }
+  if(lane!==null){
+    document.getElementById('micStatus').textContent=`🎤 検出：${names[lane]} ${Math.round(detectedHz)}Hz`;
+    const ld=document.getElementById('legendDetected'); if(ld) ld.innerHTML=`${names[lane]}<br>${Math.round(detectedHz)} Hz`;
+  }else{
+    document.getElementById('micStatus').textContent='🎤 検出中…';
+    const ld=document.getElementById('legendDetected'); if(ld) ld.textContent='検出中…';
+  }
+}
+
+// リコーダーっぽい倍音を混ぜた簡易音
+function playRecorderTone(lane, duration=.34){
+  ensureAudioContext();
+  const now=audioCtx.currentTime, f=noteFreq[lane];
+  const master=audioCtx.createGain();
+  master.gain.setValueAtTime(0.0001,now);
+  master.gain.exponentialRampToValueAtTime(0.22,now+0.015);
+  master.gain.exponentialRampToValueAtTime(0.0001,now+duration);
+  master.connect(audioCtx.destination);
+
+  [[1,1],[2,.22],[3,.08]].forEach(([mult,amp])=>{
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(f*mult,now);
+    g.gain.value=amp;o.connect(g);g.connect(master);
+    o.start(now);o.stop(now+duration+.03);
+  });
+}
+const staffPitchTop=[119,110,101,92,83,74,65,56,47,38,29,20]; // G4 A4 B4 C5 D5 E5 F5 G5 A5 B5 C6 D6
+
+const difficultySettings={
+  easy:{label:"やさしい",travel:6.2,random:false,spacing:4.0,hideRecorder:false,hideFallingNotes:false,help:"ゆっくり＋ノーツ間隔も約4秒"},
+  normal:{label:"普通",travel:4.0,random:false,spacing:.9,hideRecorder:false,hideFallingNotes:false,help:"今までと同じスピード"},
+  hard:{label:"難しい",travel:4.0,random:true,spacing:.9,hideRecorder:false,hideFallingNotes:false,help:"スピードは普通、音は毎回ランダム"},
+  pro:{label:"プロフェッショナル",travel:2.6,random:true,spacing:.9,hideRecorder:false,hideFallingNotes:false,help:"速い＋音は毎回ランダム"},
+  legend:{label:"レジェンド",travel:2.6,random:true,spacing:.9,hideRecorder:true,hideFallingNotes:true,help:"プロフェッショナル仕様＋リコーダーと落ちてくるノーツ表示なし"}
+};
+
+function updateModeUI(){
+  const solo = currentMode === 'solo';
+  document.querySelectorAll('.stat').forEach(el=>{
+    el.style.display = solo ? '' : 'none';
+  });
+}
+
+function makeChartForDifficulty(mode){
+  const songMode=document.getElementById('songMode')?.value || 'practice';
+
+  // 喜びの歌は「やさしい」「普通」の2段階。
+  // やさしい：基礎練習のやさしいと同じ落下速度 travel=6.2
+  // 普通：基礎練習の普通と同じ落下速度 travel=4.0
+  if(songMode==='joy'){
+    const joyDifficulty = (mode==='easy') ? 'easy' : 'normal';
+    const baseSetting = difficultySettings[joyDifficulty];
+    currentSetting={
+      ...baseSetting,
+      label: joyDifficulty==='easy' ? "喜びの歌・やさしい" : "喜びの歌・普通",
+      random:false,
+      hideRecorder:false,
+      hideFallingNotes:false
+    };
+    travel=baseSetting.travel;
+    chart=buildJoyChart(joyDifficulty==='easy' ? 2.0 : JOY_Q);
+    document.body.classList.remove('legend-mode');
+
+    const badge=document.querySelector('.badge');
+    if(badge) badge.textContent=joyDifficulty==='easy' ? 'やさしい' : '普通';
+    const main=document.querySelector('.songmain');
+    if(main) main.textContent='喜びの歌';
+    document.querySelectorAll('.recorder').forEach(el=>el.style.display='');
+    return;
+  }
+
+  const setting=difficultySettings[mode] || difficultySettings.normal;
+  currentSetting=setting;
+  travel=setting.travel;
+
+  document.body.classList.toggle('legend-mode', mode==='legend');
+  const firstTime=(mode==='pro' || mode==='legend') ? 2.0 : 4.0;
+  chart=baseChart.map((x,i)=>({
+    t:firstTime + i*setting.spacing,
+    l:setting.random ? Math.floor(Math.random()*12) : x.l,
+    beats:1
+  }));
+  const badge=document.querySelector('.badge');
+  if(badge) badge.textContent=setting.label;
+  const main=document.querySelector('.songmain');
+  if(main) main.textContent='難易度';
+
+  document.querySelectorAll('.recorder').forEach(el=>{
+    el.style.display=setting.hideRecorder ? 'none' : '';
+  });
+}
+
+function buildStaff(){
+  const track=document.getElementById('staffTrack');
+  track.innerHTML='';
+  chart.forEach((n,i)=>{
+    const el=document.createElement('div');
+    el.className='staffnote';
+    el.dataset.id=i;
+
+    // 喜びの歌では写真の音価も五線譜に反映
+    if(n.beats===2) el.classList.add('halfNote');
+    if(n.beats===1.5) el.classList.add('dottedNote');
+    if(n.beats===0.5) el.classList.add('eighthNote');
+    // 黒丸（符頭）の幾何学的中心が時刻位置になるよう配置。
+    // staffnote本体の幅22pxなので、中心ぶん11pxだけ左へ。
+    el.style.left=(320+n.t*115-11)+'px';
+    el.style.top=staffPitchTop[n.l]+'px';
+
+    // v30: 五線譜表示だけを1オクターブ下へ。
+    // 五線の下側に必要な加線を自動表示。
+    const noteCenter=staffPitchTop[n.l]+8;
+    track.appendChild(el);
+
+    // v37: 加線を音符の子要素にせず、五線譜へ直接配置。
+    // これで符頭の-16°回転の影響を完全に受けず、左右位置が一直線に揃う。
+    [100,118,136].forEach(y=>{
+      if(noteCenter>=y-9){
+        const ledger=document.createElement('span');
+        ledger.className='trackLedgerLine';
+        ledger.dataset.id=i;
+        ledger.style.left=(320+n.t*115-16)+'px';
+        ledger.style.top=(y-1)+'px';
+        track.appendChild(ledger);
+      }
+    });
+    const songMode=document.getElementById('songMode')?.value || 'practice';
+    let showBar=false;
+    if(songMode==='joy'){
+      // joyStepsの累積拍が4の倍数になった位置で小節線
+      const beatAtNote=(n.t-4.0)/JOY_Q;
+      showBar=i>0 && Math.abs((beatAtNote/4)-Math.round(beatAtNote/4))<0.001;
+    }else{
+      showBar=i>0 && i%4===0;
+    }
+    if(showBar){
+      const bar=document.createElement('div');
+      bar.className='bar';
+      bar.style.left=(300+n.t*115)+'px';
+      track.appendChild(bar);
+    }
+  });
+}
+buildStaff();
+
+function reset(){
+  document.querySelectorAll('.note').forEach(n=>n.remove());
+  score=0;combo=0;
+  document.getElementById('score').textContent='000000';
+  document.getElementById('combo').textContent='0';
+  state=chart.map((n,i)=>({...n,id:i,done:false,el:null}));
+  scheduledClassroom=new Set();
+}
+
+function sleep(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+
+function playCountdownBeep(step){
+  if(!audioCtx) return;
+  const now=audioCtx.currentTime;
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+
+  // 3,2,1は短い高めの電子音。GOだけ少し高く明るく。
+  osc.type='sine';
+  osc.frequency.setValueAtTime(step==='GO' ? 880 : 660, now);
+  gain.gain.setValueAtTime(0.0001,now);
+  gain.gain.exponentialRampToValueAtTime(step==='GO' ? 0.22 : 0.16,now+0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+(step==='GO' ? .28 : .18));
+  osc.connect(gain);gain.connect(audioCtx.destination);
+  osc.start(now);osc.stop(now+(step==='GO' ? .30 : .20));
+}
+
+async function runCountdown(){
+  const overlay=document.getElementById('countdownOverlay');
+  const label=document.getElementById('countdownText');
+  const track=document.getElementById('staffTrack');
+
+  // カウント中は、五線譜の音符を完全に隠す。
+  // 下の落下ノーツはloop開始前なのでまだ生成されない。
+  track.style.visibility='hidden';
+  overlay.style.display='flex';
+
+  for(const step of ['3','2','1']){
+    label.textContent=step;
+    label.classList.remove('pop'); void label.offsetWidth; label.classList.add('pop');
+    playCountdownBeep(step);
+    await sleep(850);
+  }
+
+  label.textContent='GO!';
+  label.classList.remove('pop'); void label.offsetWidth; label.classList.add('pop');
+  playCountdownBeep('GO');
+  await sleep(500);
+
+  overlay.style.display='none';
+  track.style.visibility='visible';
+}
+
+function flash(text){
+  const j=document.getElementById('judge');
+  j.textContent=text;j.classList.remove('flash');void j.offsetWidth;j.classList.add('flash');
+}
+async function begin(){
+  const diff=document.getElementById('difficulty').value;
+  currentMode=document.getElementById('mode').value;
+  updateModeUI();
+  makeChartForDifficulty(diff);
+  buildStaff();
+
+  if(currentMode==='solo'){
+    const ok=await startMic();
+    if(!ok) return;
+  }else{
+    stopMic();
+    await ensureAudioContext();
+    document.getElementById('micStatus').textContent='🏫 教室モード';
+  }
+
+  reset();
+  running=false;paused=false;pauseTime=0;
+  document.getElementById('pauseBtn').textContent='⏸ 一時停止';
+  document.getElementById('startOverlay').style.display='none';
+
+  // 3→2→1→GO! の間はゲーム時間を進めない
+  await runCountdown();
+
+  startTime=performance.now();
+  running=true;
+  loop();
+}
+function loop(){
+  if(!running || paused)return;
+  const t=(performance.now()-startTime)/1000;
+  const gh=document.getElementById('game').clientHeight;
+  const spawnTop=-36;
+  const hitY=gh-judgeBottom-16;
+
+  // 上の五線譜も同じ時刻で動かす。
+  // 音符が赤い縦線に来る瞬間と、下のノーツが判定ラインに来る瞬間が一致。
+  const staffWrap=document.getElementById('staffWrap');
+  const staff=document.getElementById('staff');
+  const staffHitX=staffWrap.clientWidth*0.18;
+  const staffInsetX=staff.offsetLeft; // #staff は staffWrap の左から24px内側
+  const pxPerSec=115;
+  const track=document.getElementById('staffTrack');
+
+  // 重要：
+  // 赤ラインは staffWrap 基準、音符は staff 基準なので、
+  // staff の左インセット分も差し引く。
+  // これで「黒丸の中心」が赤ラインのど真ん中に来る瞬間 = n.t。
+  track.style.transform=`translateX(${staffHitX-staffInsetX-320-t*pxPerSec}px)`;
+
+  const activeIndex=state
+    .filter(n=>!n.done)
+    .sort((a,b)=>Math.abs(a.t-t)-Math.abs(b.t-t))[0]?.id;
+  document.querySelectorAll('.staffnote').forEach(el=>{
+    el.classList.toggle('active', Number(el.dataset.id)===activeIndex);
+  });
+
+  if(currentMode==='solo') updateMic();
+
+  state.forEach(n=>{
+    if(n.done)return;
+    const dt=n.t-t;
+
+    if(dt<=travel && !n.el && !(currentSetting && currentSetting.hideFallingNotes)){
+      const el=document.createElement('div');el.className='note';
+      lanes[n.l].appendChild(el);n.el=el;
+    }
+    if(n.el){
+      const p=1-(dt/travel);
+      const y=spawnTop+(hitY-spawnTop)*p;
+      n.el.style.top=y+'px';
+    }
+
+    // 教室モード：判定ラインに来た瞬間、その音を鳴らすだけ
+    if(currentMode==='classroom' && dt<=0 && !scheduledClassroom.has(n.id)){
+      scheduledClassroom.add(n.id);
+      playRecorderTone(n.l);
+      n.done=true;
+      if(n.el){n.el.remove();n.el=null;}
+      return;
+    }
+
+    // 個人モード：判定の瞬間に、マイクで正しい音が出ているか判定
+    if(currentMode==='solo' && dt<=0 && dt>-.10){
+      if(detectedLane===n.l){
+        n.done=true;
+        if(n.el){n.el.remove();n.el=null;}
+        combo++; score+=1000;
+        document.getElementById('score').textContent=String(score).padStart(6,'0');
+        document.getElementById('combo').textContent=combo;
+        const ls=document.getElementById('legendScore'); if(ls) ls.textContent=String(score).padStart(6,'0');
+        const lc=document.getElementById('legendCombo'); if(lc) lc.textContent=combo;
+        flash('PERFECT');
+        return;
+      }
+    }
+
+    if(currentMode==='solo' && t-n.t>.18){
+      n.done=true;
+      if(n.el){n.el.remove();n.el=null;}
+      combo=0;
+      document.getElementById('combo').textContent=combo;
+      const lc=document.getElementById('legendCombo'); if(lc) lc.textContent=combo;
+      flash('MISS');
+    }
+  });
+
+  if(t>chart[chart.length-1].t+1.2){
+    running=false;
+    if(currentMode==='solo') stopMic();
+    if(currentMode==='solo') flash('FINISH!');
+    setTimeout(()=>document.getElementById('startOverlay').style.display='flex',800);
+    return;
+  }
+  raf=requestAnimationFrame(loop);
+}
+function hitLane(i){
+  // 個人モードはマイク、教室モードは自動再生なのでタップ判定は使わない
+}
+lanes.forEach((lane,i)=>lane.addEventListener('pointerdown',()=>hitLane(i)));
+currentMode=document.getElementById('mode').value;
+updateModeUI();
+document.getElementById('startBtn').onclick=begin;
+
+document.getElementById('pauseBtn').onclick=()=>{
+  if(!running)return;
+  if(!paused){
+    paused=true;
+    pauseTime=(performance.now()-startTime)/1000;
+    cancelAnimationFrame(raf);
+    document.getElementById('pauseBtn').textContent='▶ 再開';
+    flash('PAUSE');
+  }else{
+    paused=false;
+    startTime=performance.now()-pauseTime*1000;
+    document.getElementById('pauseBtn').textContent='⏸ 一時停止';
+    loop();
+  }
+};
+
+document.getElementById('titleBtn').onclick=()=>{
+  if(running && !confirm('タイトルに戻る？')) return;
+  running=false;paused=false;cancelAnimationFrame(raf);
+  stopMic();
+  document.querySelectorAll('.note').forEach(n=>n.remove());
+  document.getElementById('startOverlay').style.display='flex';
+  currentMode=document.getElementById('mode').value;
+  updateModeUI();
+  document.getElementById('pauseBtn').textContent='⏸ 一時停止';
+};
+
+document.getElementById('mode').addEventListener('change',e=>{
+  currentMode=e.target.value;
+  updateModeUI();
+  document.getElementById('modeHelp').textContent=
+    e.target.value==='solo'
+      ? '個人モード：マイクで吹いた音を判定'
+      : '教室モード：判定の瞬間にリコーダー音が鳴る（採点なし）';
+});
+
+function updateSongModeUI(){
+  const songMode=document.getElementById('songMode').value;
+  const diff=document.getElementById('difficulty');
+  const help=document.getElementById('difficultyHelp');
+  const songHelp=document.getElementById('songHelp');
+
+  if(songMode==='joy'){
+    // 喜びの歌は「やさしい」「普通」だけ選べる
+    [...diff.options].forEach(opt=>{
+      opt.disabled = !['easy','normal'].includes(opt.value);
+    });
+    if(!['easy','normal'].includes(diff.value)) diff.value='normal';
+    diff.disabled=false;
+    diff.style.opacity='1';
+
+    const isEasy=diff.value==='easy';
+    help.textContent=isEasy
+      ? '喜びの歌・やさしい：落下スピードは基礎練習の「やさしい」と同じ＋ノーツ間隔は約2秒'
+      : '喜びの歌・普通：基礎練習の「普通」と同じ落下スピード';
+    songHelp.textContent='喜びの歌：写真のアルトリコーダーAの旋律・リズムでプレイ';
+    document.querySelector('.songmain').textContent='喜びの歌';
+    document.querySelector('.badge').textContent=isEasy ? 'やさしい' : '普通';
+    document.body.classList.remove('legend-mode');
+  }else{
+    // 基礎練習では全難易度を使用可能
+    [...diff.options].forEach(opt=>opt.disabled=false);
+    diff.disabled=false;
+    diff.style.opacity='1';
+
+    const s=difficultySettings[diff.value];
+    help.textContent=`${s.label}：${s.help}`;
+    songHelp.textContent='基礎練習：これまでの12音練習';
+    document.querySelector('.songmain').textContent='難易度';
+    document.querySelector('.badge').textContent=s.label;
+  }
+  makeChartForDifficulty(diff.value);
+  buildStaff();
+}
+document.getElementById('songMode').addEventListener('change',updateSongModeUI);
+updateSongModeUI();
+
+document.getElementById('difficulty').addEventListener('change',e=>{
+  const songMode=document.getElementById('songMode').value;
+  if(songMode==='joy'){
+    const isEasy=e.target.value==='easy';
+    document.getElementById('difficultyHelp').textContent=isEasy
+      ? '喜びの歌・やさしい：落下スピードは基礎練習の「やさしい」と同じ＋ノーツ間隔は約2秒'
+      : '喜びの歌・普通：基礎練習の「普通」と同じ落下スピード';
+    document.querySelector('.badge').textContent=isEasy ? 'やさしい' : '普通';
+    document.body.classList.remove('legend-mode');
+    makeChartForDifficulty(e.target.value);
+    buildStaff();
+  }else{
+    const s=difficultySettings[e.target.value];
+    document.getElementById('difficultyHelp').textContent=`${s.label}：${s.help}`;
+    document.body.classList.toggle('legend-mode', e.target.value==='legend');
+  }
+});
+document.getElementById('settings').onclick=()=>alert('喜びの歌モード追加済み。個人モードはマイク判定、教室モードは自動演奏です。');
+</script>
+</body>
+</html>
